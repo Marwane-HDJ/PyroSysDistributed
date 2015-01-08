@@ -1,0 +1,5 @@
+client: conn.o
+	g++ client.cpp conn.o -o client
+
+conn.o: conn.cpp conn.h hello
+	g++ -c conn.cpp -o conn.o
