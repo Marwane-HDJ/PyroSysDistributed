@@ -20,7 +20,7 @@ def main():
     Pyro4.Daemon.serveSimple(
         {
             master: "master"
-        },
+        }, host="129.88.57.92",
         ns=True)
 
 
