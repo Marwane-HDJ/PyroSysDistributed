@@ -10,7 +10,7 @@ class Master(object):
     def __init__(self):
         self.workers = []
         self.workerName = ""
-        #queue of tasks to be done, the master should put the tasks here as they are available to run
+        # queue of tasks to be done, the master should put the tasks here as they are available to run
         self.toBeDone = Queue.Queue()
         for i in range(100):
             self.toBeDone.put(i)
