@@ -5,7 +5,6 @@ import Queue
 import threading
 
 
-
 class Master(object):
     def __init__(self):
         self.workers = []
@@ -18,21 +17,22 @@ class Master(object):
     def list_contents(self):
         return self.workers
 
-    def register(self, workerName): #register the worker and send work to it
+    def register(self, workerName):  # register the worker and send work to it
         self.workers.append(workerName)
         print("worker " + workerName + " registred.")
         self.sendWork(workerName)
 
-    def echo(self,message):
+    def echo(self, message):
         print message
         return "Hi slave"
 
     def sendWork(self, workerName):
-        worker=Pyro4.Proxy("PYRONAME:" + workerName)
-        while True: #send work forever
+        worker = Pyro4.Proxy("PYRONAME:" + workerName)
+        while True:  # send work forever
             #print (" sending work")
-            result = (worker.doWork(self.toBeDone.get(block=True))) #block until there is some work to do
+            result = (worker.doWork(self.toBeDone.get(block=True)))  #block until there is some work to do
             #Do something with the result
+
 
 def main():
     master = Master()
@@ -42,8 +42,6 @@ def main():
         }, host="localhost",
         ns=True)
     print "Ready."
-
-
 
 
 if __name__ == "__main__":

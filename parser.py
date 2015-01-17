@@ -55,7 +55,6 @@ def parse(f_path):
 
 
 def print_make_file(makefile):
-    line = ""
     for target in makefile:
         line = target.value + " : " + target.getdependenciestostring()
         print(line)
