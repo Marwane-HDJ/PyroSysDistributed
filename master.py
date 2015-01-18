@@ -30,8 +30,11 @@ class Master(object):
         while True:  # send work forever
             # print (" sending work")
             result = (worker.do_work(self.to_be_done.get(block=True)))  # block until there is some work to do
-            # Do something with the result
+            #To decide if this can be done in another thread
+            self.process_result(result)
 
+    def process_result(self,result):
+        print (result)
 
 def main():
     master = Master()
