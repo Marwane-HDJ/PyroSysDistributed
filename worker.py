@@ -1,8 +1,10 @@
 __author__ = 'marouane'
+
 import Pyro4
-import threading
 import time
-import multiprocessing
+import socket
+import fcntl
+import struct
 
 
 class Worker(object):
@@ -20,44 +22,30 @@ class Worker(object):
         # return the resulting files
         return "I'm ready to work more, my master" + self.name
 
-    def register_at_nameserver(self):
-        print ("registering worker at NameServer")
-        Pyro4.Daemon.serveSimple(
-            {
-                self: self.name
-            }, host="localhost",
-            ns=True)
+
+def get_ip_address(ifname):
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    return socket.inet_ntoa(fcntl.ioctl(
+        s.fileno(),
+        0x8915,  # SIOCGIFADDR
+        struct.pack('256s', ifname[:15])
+    )[20:24])
 
 
 def main():
-    workerList = []
-    for i in range(multiprocessing.cpu_count()):
-        workerList.append(Worker(str(i)))
+    print("1")
+    worker = Worker('worker' + ":" + get_ip_address('eth0'))
 
-    for worker in workerList:
-        print (worker.name)
-
-    threadsList = []
-    for worker in workerList:
-        t1 = threading.Thread(target=worker.register_at_nameserver)
-        t1.start()
-        threadsList.append(t1)
-
-    # Use another thread to register itself
-
-    print("Passed here ")
+    daemon = Pyro4.Daemon()
+    worker_uri = daemon.register(worker)
+    ns = Pyro4.locateNS()
+    ns.register(worker.name, worker_uri)
+    print "Worker ready."
 
     # register itself at the master and it will send work automatically
-
-    for worker in workerList:
-        master = Pyro4.Proxy("PYRONAME:master")
-        t1 = threading.Thread(target=master.register, args =worker.name)
-        t1.start()
-        print ("worker started")
-        threadsList.append(t1)
-
-    for thread in threadsList:
-        thread.join()
+    master = Pyro4.Proxy("PYRONAME:master")
+    master.register(worker.name)
+    daemon.requestLoop()
 
 
 if __name__ == "__main__":

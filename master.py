@@ -1,5 +1,6 @@
 __author__ = 'marouane'
 
+import time
 import Pyro4
 import Queue
 import threading
@@ -16,10 +17,9 @@ class Master(object):
     def list_contents(self):
         return self.workers
 
-    def register(self, worker_name=""):  # register the worker and send work to it
+    def register(self, worker_name):  # register the worker and send work to it
         self.workers.append(worker_name)
         print("worker " + worker_name + " registred.")
-        self.send_work(worker_name)
 
     def echo(self, message):
         print message
@@ -27,23 +27,33 @@ class Master(object):
 
     def send_work(self, worker_name):
         worker = Pyro4.Proxy("PYRONAME:" + worker_name)
-        while True:  # send work forever
-            # print (" sending work")
-            result = (worker.do_work(self.to_be_done.get(block=True)))  # block until there is some work to do
-            #To decide if this can be done in another thread
-            self.process_result(result)
+        # print (" sending work")
+        result = (worker.do_work(self.to_be_done.get(block=True)))  # block until there is some work to do
+        # Do something with the result
 
-    def process_result(self,result):
-        print (result)
+    def run(self):
+        def dispatch_jobs():
+            while True:
+                time.sleep(3)
+                if len(self.workers) == 0:
+                    print("no workers")
+                else:
+                    self.send_work(self.workers[0])
+
+        thread = threading.Thread(target=dispatch_jobs)
+        thread.setDaemon(True)
+        thread.start()
+
 
 def main():
     master = Master()
-    Pyro4.Daemon.serveSimple(
-        {
-            master: "master"
-        }, host="localhost",
-        ns=True)
-    print "Ready."
+    daemon = Pyro4.Daemon()
+    master_uri = daemon.register(master)
+    ns = Pyro4.locateNS()
+    ns.register("master", master_uri)
+    print "Master ready."
+    master.run()
+    daemon.requestLoop()
 
 
 if __name__ == "__main__":
