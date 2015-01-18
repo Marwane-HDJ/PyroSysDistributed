@@ -2,6 +2,7 @@ import sys
 from os.path import abspath
 
 from Utilities.parser import parse
+
 from DataStructure.targetNode import TargetNode
 
 
@@ -51,15 +52,29 @@ class TargetTree(object):
                     print(val.value + " ")
                 print("\n")
 
-    def recursive_execute(self, node):
+    def recursive_execute(self, node, queue):
         if len(node.dependencies) == 0:
             if len(node.command) != 0:
                 # TODO : Change from print to execute
-                print(node.command)
+                #print(node.command)
+                #node.execute_command()
+                if node.state == 1:
+                    node.state = 2
+                    queue.put(node)
         else:
+            ready = True
             for dep in node.dependencies:
-                self.recursive_execute(dep)
-                # if len(dep.command) > 0:
-                # print(dep.command)
+                if dep.state != 3:
+                    ready = False
+                    self.recursive_execute(dep, queue)
+
+            if ready:
+                node.state = 2
+                queue.put(node)
+
+            #self.recursive_execute(dep)
+            # if len(dep.command) > 0:
+            # print(dep.command)
             # TODO : Change from print to execute
-            print(node.command)
+            #print(node.command)
+            #node.execute_command()

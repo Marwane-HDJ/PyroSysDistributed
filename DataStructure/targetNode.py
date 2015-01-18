@@ -9,7 +9,7 @@ class TargetNode(object):
         self.parent = parent
         self.dependencies = dependencies
         self.command = command
-        self.satisfied = False
+        self.state = False
         self.child_count = 0
 
     def add_dependence(self, dependence):
