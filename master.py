@@ -1,7 +1,6 @@
-import time
-
 __author__ = 'marouane'
 
+import time
 import Pyro4
 import Queue
 import threading
@@ -30,7 +29,7 @@ class Master(object):
         worker = Pyro4.Proxy("PYRONAME:" + worker_name)
         # print (" sending work")
         result = (worker.do_work(self.to_be_done.get(block=True)))  # block until there is some work to do
-            # Do something with the result
+        # Do something with the result
 
     def run(self):
         def dispatch_jobs():

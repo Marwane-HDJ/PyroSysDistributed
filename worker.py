@@ -1,7 +1,6 @@
 __author__ = 'marouane'
 
 import Pyro4
-import threading
 import time
 import socket
 import fcntl
@@ -18,19 +17,11 @@ class Worker(object):
         print("Worker {0} registred".format(self.name))
 
     def do_work(self, command_files):
-        print (command_files)
+        print (self.name + ":" + str(command_files))
         time.sleep(1)
         # return the resulting files
-        return "I'm ready to work more, my master"
+        return "I'm ready to work more, my master" + self.name
 
-
-    def register_at_nameserver(self):
-        print ("registering worker at NameServer")
-        Pyro4.Daemon.serveSimple(
-            {
-                self: self.name
-            }, host="localhost",
-            ns=True)
 
 def get_ip_address(ifname):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -43,7 +34,7 @@ def get_ip_address(ifname):
 
 def main():
     print("1")
-    worker = Worker('worker'+":" + get_ip_address('eth0'))
+    worker = Worker('worker' + ":" + get_ip_address('eth0'))
 
     daemon = Pyro4.Daemon()
     worker_uri = daemon.register(worker)
