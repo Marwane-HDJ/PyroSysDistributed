@@ -1,7 +1,9 @@
 import sys
-from os.path import abspath, exists
-from parser import parse, print_make_file
-from targetNode import TargetNode
+from os.path import abspath
+
+from Utilities.parser import parse
+from DataStructure.targetNode import TargetNode
+
 
 __author__ = 'Marouane'
 
@@ -61,22 +63,3 @@ class TargetTree(object):
                 # print(dep.command)
             # TODO : Change from print to execute
             print(node.command)
-
-
-def main():
-    if 2 != len(sys.argv):
-        print("Arguments incorrects")
-        # TODO : refactor with exceptions
-    else:
-        f_path = abspath(sys.argv[1])
-        makefile = parse(f_path)
-        # print_make_file(makefile)
-        tree = TargetTree(makefile)
-        # tree.print_dico()
-        tree.recursive_execute(tree.tree_root)
-
-
-if __name__ == "__main__":
-    main()
-
-

@@ -1,9 +1,10 @@
 __author__ = 'Marouane'
 
-from target import Target
 import sys
 import re
 from os.path import abspath, exists
+
+from Utilities.target import Target
 
 
 def parse(f_path):
@@ -61,17 +62,3 @@ def print_make_file(makefile):
         for command in target.commands:
             line = "\t" + command
             print(line)
-
-
-def main():
-    if 2 != len(sys.argv):
-        print("Arguments incorrects")
-        # TODO : refactor with exceptions
-    else:
-        f_path = abspath(sys.argv[1])
-        makefile = parse(f_path)
-        print_make_file(makefile)
-
-
-if __name__ == "__main__":
-    main()
