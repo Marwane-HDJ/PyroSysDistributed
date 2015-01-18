@@ -56,7 +56,7 @@ def parse(f_path):
 
 def print_make_file(makefile):
     for target in makefile:
-        line = target.value + " : " + target.getdependenciestostring()
+        line = target.value + " : " + target.dependencies_to_string()
         print(line)
         for command in target.commands:
             line = "\t" + command
