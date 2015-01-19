@@ -63,11 +63,8 @@ class Master(object):
                 print("We want you !")
                 self.prepare_jobs()
 
-                print("1")
                 job = self.jobs_to_do.get(block=True)
-                print("2")
                 worker = self.free_workers.get(block=True)
-                print("3")
                 result = self.send_work(worker, job)
                 self.receive_result(result)
                 # print("work sent")
