@@ -10,7 +10,7 @@ class TargetNode(object):
         self.parent = parent
         self.dependencies = dependencies
         self.command = command
-        self.state = False
+        self.state = 0
         self.child_count = 0
         self.satisfied = False
 

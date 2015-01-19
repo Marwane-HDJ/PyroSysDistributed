@@ -53,7 +53,7 @@ class Master(object):
     def send_work(self, worker_name, job):
         worker = Pyro4.Proxy("PYRONAME:" + worker_name)
         # block until there is some work to do
-        result = worker.do_work(self.jobs_to_do.get(block=True))
+        result = worker.do_work(job)
         # print("The result is : " + result)
         return result
 
@@ -86,7 +86,9 @@ class Master(object):
                     command = var[3]
                     print("received : " + command + " from " + worker)
                     self.tree.node_satisfied(command)
-                    self.prepare_jobs_cut()
+                    print("Tree satisfaction -----------------")
+                    self.tree.recursive_print(self.tree.tree_root)
+                    print("----------------------------")
                     self.free_workers.put(worker)
 
         th_rcv_results = threading.Thread(target=receive_results)
@@ -108,6 +110,9 @@ def main():
         makefile = parse(f_path)
         tree = TargetTree(makefile)
         master = Master(tree)
+        print("Tree debut -----------------")
+        tree.recursive_print(tree.tree_root)
+        print("----------------------------")
     else:
         master = Master()
 
