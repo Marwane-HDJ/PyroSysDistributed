@@ -2,7 +2,6 @@ import time
 import socket
 import fcntl
 import struct
-import cPickle as pickle
 
 import Pyro4
 
@@ -22,8 +21,8 @@ class Worker(object):
     def do_work(self, command_files):
         print(self.name + ":" + str(command_files))
         time.sleep(1)
-        #return "I'm ready to work more, my master" + self.name
-        return "Where to sign up for work ? " + self.name
+        # return "I'm ready to work more, my master" + self.name
+        return "result:" + self.name + ":" + command_files
 
 
 def get_ip_address(ifname):

@@ -46,6 +46,36 @@ class TargetTree(object):
                     print(val.value + " ")
                 print("\n")
 
+    def no_child_nodes(self):
+        node_list = []
+        self.recursive_no_child_nodes(self.tree_root, node_list)
+        return node_list
+
+    def recursive_no_child_nodes(self, node, node_list):
+        if len(node.dependencies) == 0:
+            node_list.append(node)
+        else:
+            for dep in node.dependencies:
+                self.recursive_no_child_nodes(dep, node_list)
+
+    def no_child_nodes_cut(self):
+        node_list = []
+        self.recursive_no_child_nodes_cut(self.tree_root, node_list)
+        return node_list
+
+    def recursive_no_child_nodes_cut(self, node, node_list):
+        if len(node.dependencies) == 0:
+            node_list.append(node)
+            if node.satisfied:
+                node.parent.dependencies.remove(node)
+        else:
+            for dep in node.dependencies:
+                self.recursive_no_child_nodes_cut(dep, node_list)
+
+    def node_satisfied(self, node_name):
+        node = self.targets.get(node_name)
+        node.update_satisfaction()
+
     def recursive_print(self, node):
         if len(node.dependencies) == 0:
             if len(node.command) != 0:

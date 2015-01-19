@@ -1,14 +1,15 @@
-from DataStructure.targetNode import TargetNode
 from os.path import abspath
 import sys
-from DataStructure.targetTree import TargetTree
-from Utilities.parser import parse
-
-import cPickle as pickle
 import time
-import Pyro4
 import Queue
 import threading
+
+import Pyro4
+
+from DataStructure.targetTree import TargetTree
+
+from Utilities.parser import parse
+import worker
 
 
 __author__ = 'marouane'
@@ -21,9 +22,9 @@ class Master(object):
         self.job_results = Queue.Queue()
         self.tree = tree
         # queue of tasks to be done, the master should put the tasks here as they are available to run_job_dispatcher
-        self.to_be_done = Queue.Queue()
-        for i in range(100):
-            self.to_be_done.put(i)
+        self.jobs_to_do = Queue.Queue()
+        # for i in range(100):
+        # self.jobs_to_do.put(i)
 
     def list_contents(self):
         return self.workers
@@ -37,26 +38,37 @@ class Master(object):
         print(message)
         return "Hi slave"
 
-    def send_work(self, worker_name):
+    def prepare_jobs(self):
+        job_list = list
+        job_list = self.tree.no_child_nodes()
+        for job in job_list:
+            self.jobs_to_do.put(job.value)
+
+    def prepare_jobs_cut(self):
+        job_list = list
+        job_list = self.tree.no_child_nodes_cut()
+        for job in job_list:
+            self.jobs_to_do.put(job.value)
+
+    def send_work(self, worker_name, job):
         worker = Pyro4.Proxy("PYRONAME:" + worker_name)
         # block until there is some work to do
-        result = worker.do_work(self.to_be_done.get(block=True))
+        result = worker.do_work(self.jobs_to_do.get(block=True))
         # print("The result is : " + result)
-        self.receive_result(result)
-        self.free_workers.put(worker_name)
-
-    def receive_result(self, result):
-        print("received : " + result)
-        self.job_results.put(result)
-        # TODO : change time for perf
-        time.sleep(1)
+        return result
 
     def run_job_dispatcher(self):
         def dispatch_jobs():
             while True:
                 print("We want you !")
-                self.send_work(self.free_workers.get(block=True))
-                print("work sent")
+                self.prepare_jobs()
+                job = self.jobs_to_do.get(block=True)
+                worker = self.free_workers.get(block=True)
+                result = self.send_work(worker, job)
+                self.receive_result(result)
+                # print("work sent")
+                # self.receive_result(result)
+                # self.free_workers.put(worker)
 
 
         th_disp_jobs = threading.Thread(target=dispatch_jobs)
@@ -67,11 +79,22 @@ class Master(object):
         def receive_results():
             print("Job mail box start")
             while True:
-                self.receive_result(self.job_results.get(block=True))
+                result = self.job_results.get(block=True)
+                var = result.split(":")
+                if len(var) == 4:
+                    worker = var[1] + ":" + var[2]
+                    command = var[3]
+                    print("received : " + command + " from " + worker)
+                    self.tree.node_satisfied(command)
+                    self.prepare_jobs_cut()
+                    self.free_workers.put(worker)
 
         th_rcv_results = threading.Thread(target=receive_results)
         th_rcv_results.setDaemon(True)
         th_rcv_results.start()
+
+    def receive_result(self, result):
+        self.job_results.put(result)
 
 
 def main():

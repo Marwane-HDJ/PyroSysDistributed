@@ -17,6 +17,10 @@ class TargetNode(object):
     def add_dependence(self, dependence):
         self.dependencies.append(dependence)
 
+    def cut_dependencies(self):
+        for ep in self.dependencies:
+            dep = None
+
     def set_command(self, command):
         self.command = command
 
