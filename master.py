@@ -31,7 +31,7 @@ class Master(object):
 
     def register(self, worker_name):  # register the worker and send work to it
         self.workers.append(worker_name)
-        self.free_workers.put_nowait(worker_name)
+        self.free_workers.put(worker_name)
         print("worker " + worker_name + " registred.")
 
     def echo(self, message):
@@ -42,7 +42,7 @@ class Master(object):
         job_list = list
         job_list = self.tree.no_child_nodes()
         for job in job_list:
-            self.jobs_to_do.put(job.value)
+            self.jobs_to_do.put_nowait(job.value)
 
     def prepare_jobs_cut(self):
         job_list = list
@@ -53,17 +53,21 @@ class Master(object):
     def send_work(self, worker_name, job):
         worker = Pyro4.Proxy("PYRONAME:" + worker_name)
         # block until there is some work to do
-        result = worker.do_work(job)
+        return worker.do_work(job)
         # print("The result is : " + result)
-        return result
+
 
     def run_job_dispatcher(self):
         def dispatch_jobs():
             while True:
                 print("We want you !")
                 self.prepare_jobs()
+
+                print("1")
                 job = self.jobs_to_do.get(block=True)
+                print("2")
                 worker = self.free_workers.get(block=True)
+                print("3")
                 result = self.send_work(worker, job)
                 self.receive_result(result)
                 # print("work sent")
@@ -86,10 +90,8 @@ class Master(object):
                     command = var[3]
                     print("received : " + command + " from " + worker)
                     self.tree.node_satisfied(command)
-                    print("Tree satisfaction -----------------")
-                    self.tree.recursive_print(self.tree.tree_root)
-                    print("----------------------------")
-                    self.free_workers.put(worker)
+                    self.prepare_jobs()
+                    self.free_workers.put(worker, block=True)
 
         th_rcv_results = threading.Thread(target=receive_results)
         th_rcv_results.setDaemon(True)
@@ -110,9 +112,6 @@ def main():
         makefile = parse(f_path)
         tree = TargetTree(makefile)
         master = Master(tree)
-        print("Tree debut -----------------")
-        tree.recursive_print(tree.tree_root)
-        print("----------------------------")
     else:
         master = Master()
 
