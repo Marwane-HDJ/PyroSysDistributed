@@ -1,10 +1,13 @@
-__author__ = 'marouane'
-
-import Pyro4
 import time
 import socket
 import fcntl
 import struct
+import cPickle as pickle
+
+import Pyro4
+
+
+__author__ = 'marouane'
 
 
 class Worker(object):
@@ -17,10 +20,10 @@ class Worker(object):
         print("Worker {0} registred".format(self.name))
 
     def do_work(self, command_files):
-        print (self.name + ":" + str(command_files))
+        print(self.name + ":" + str(command_files))
         time.sleep(1)
-        # return the resulting files
-        return "I'm ready to work more, my master" + self.name
+        #return "I'm ready to work more, my master" + self.name
+        return "Where to sign up for work ? " + self.name
 
 
 def get_ip_address(ifname):
@@ -40,7 +43,7 @@ def main():
     worker_uri = daemon.register(worker)
     ns = Pyro4.locateNS()
     ns.register(worker.name, worker_uri)
-    print "Worker ready."
+    print("Worker ready.")
 
     # register itself at the master and it will send work automatically
     master = Pyro4.Proxy("PYRONAME:master")

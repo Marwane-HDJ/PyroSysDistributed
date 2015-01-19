@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 
 __author__ = 'Marouane'
@@ -11,6 +12,7 @@ class TargetNode(object):
         self.command = command
         self.state = False
         self.child_count = 0
+        self.satisfied = False
 
     def add_dependence(self, dependence):
         self.dependencies.append(dependence)
@@ -28,3 +30,13 @@ class TargetNode(object):
     def print_dependencies(self):
         for dependence in self.dependencies:
             print(dependence.value + "\n")
+
+    def update_satisfaction(self):
+        satisfaction = True
+        for node in self.dependencies:
+            if not node.satisfied:
+                satisfaction = False
+                break
+
+        if satisfaction:
+            self.satisfied = True

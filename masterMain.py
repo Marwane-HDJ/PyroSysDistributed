@@ -14,7 +14,7 @@ from Utilities.parser import parse
 class Master(object):
     def __init__(self):
         self.workers = []
-        # queue of tasks to be done, the master should put the tasks here as they are available to run
+        # queue of tasks to be done, the master should put the tasks here as they are available to run_job_dispatcher
         self.to_be_done = Queue.Queue()
         for i in range(100):
             self.to_be_done.put(i)

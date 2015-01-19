@@ -1,10 +1,4 @@
-import sys
-from os.path import abspath
-
-from Utilities.parser import parse
-
 from DataStructure.targetNode import TargetNode
-
 
 __author__ = 'Marouane'
 
@@ -52,12 +46,29 @@ class TargetTree(object):
                     print(val.value + " ")
                 print("\n")
 
+    def recursive_print(self, node):
+        if len(node.dependencies) == 0:
+            if len(node.command) != 0:
+                print(node.command)
+        else:
+            for dep in node.dependencies:
+                self.recursive_execute(dep)
+            print(node.command)
+
+    def update_satisfaction(self, node):
+        if len(node.dependencies) == 0:
+            node.update_satisfaction()
+        else:
+            for dep in node.dependencies:
+                self.update_satisfaction(dep)
+            self.update_satisfaction(node)
+
     def recursive_execute(self, node, queue):
         if len(node.dependencies) == 0:
             if len(node.command) != 0:
                 # TODO : Change from print to execute
-                #print(node.command)
-                #node.execute_command()
+                # print(node.command)
+                # node.execute_command()
                 if node.state == 1:
                     node.state = 2
                     queue.put(node)
@@ -72,9 +83,9 @@ class TargetTree(object):
                 node.state = 2
                 queue.put(node)
 
-            #self.recursive_execute(dep)
-            # if len(dep.command) > 0:
-            # print(dep.command)
-            # TODO : Change from print to execute
-            #print(node.command)
-            #node.execute_command()
+                # self.recursive_execute(dep)
+                # if len(dep.command) > 0:
+                # print(dep.command)
+                # TODO : Change from print to execute
+                # print(node.command)
+                # node.execute_command()
