@@ -58,7 +58,7 @@ list18.txt:
 list19.txt:
 	premier `echo 18*20000000/20 |bc` `echo 19*20000000/20-1 |bc` > list19.txt
 
-list20.txt:
+list20.txt: kiko
 	premier `echo 19*20000000/20 |bc` `echo 20*20000000/20-1 |bc` > list20.txt
 
 # comment

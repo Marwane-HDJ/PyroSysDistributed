@@ -1,4 +1,7 @@
+import Pyro4
+
 from DataStructure.targetNode import TargetNode
+
 
 __author__ = 'Marouane'
 
@@ -17,11 +20,13 @@ class TargetTree(object):
                 self.targets.update({target.value: p})
             else:
                 p = self.targets.get(target.value)
+                p.exist = True
                 p.set_command(target.commands)
                 self.targets.update({target.value: p})
 
             if self.first:
                 self.tree_root = self.targets.get(target.value)
+                self.tree_root.exist = True
                 self.first = False
 
             for dependence in target.dependencies:
@@ -57,11 +62,9 @@ class TargetTree(object):
                 print("add =======" + node.value)
                 node_list.append(node)
                 node.state = 1
-
         else:
             for dep in node.dependencies:
                 self.recursive_no_child_nodes(dep, node_list)
-
 
     def node_satisfied(self, node_name):
         node = self.targets.get(node_name)
@@ -76,6 +79,16 @@ class TargetTree(object):
             for dep in node.dependencies:
                 self.recursive_print(dep)
             print(node.command)
+
+    def nodes_ns_register(self, host):
+        dm = Pyro4.Daemon(host=host)
+        ns = Pyro4.locateNS(host=host)
+
+        for target in self.targets.keys():
+            node = self.targets.get(target)
+            uri = dm.register(node)
+            ns.register(node.value, uri)
+        #dm.requestLoop()
 
     def update_satisfaction(self, node):
         if len(node.dependencies) == 0:

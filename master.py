@@ -1,15 +1,15 @@
 from os.path import abspath
+import socket
+import struct
 import sys
-import time
 import Queue
 import threading
+import fcntl
 
 import Pyro4
 
 from DataStructure.targetTree import TargetTree
-
 from Utilities.parser import parse
-import worker
 
 
 __author__ = 'marouane'
@@ -56,7 +56,6 @@ class Master(object):
         return worker.do_work(job)
         # print("The result is : " + result)
 
-
     def run_job_dispatcher(self):
         def dispatch_jobs():
             while True:
@@ -70,7 +69,6 @@ class Master(object):
                 # print("work sent")
                 # self.receive_result(result)
                 # self.free_workers.put(worker)
-
 
         th_disp_jobs = threading.Thread(target=dispatch_jobs)
         th_disp_jobs.setDaemon(True)
@@ -98,10 +96,20 @@ class Master(object):
         self.job_results.put(result)
 
 
+def get_ip_address(ifname):
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    return socket.inet_ntoa(fcntl.ioctl(
+        s.fileno(),
+        0x8915,  # SIOCGIFADDR
+        struct.pack('256s', ifname[:15])
+    )[20:24])
+
+
 def main():
     tree = None
     makefile = None
     master = None
+    host_ip = get_ip_address('eth0')
 
     if 2 == len(sys.argv):
         # if the argument is the makefile name
@@ -114,23 +122,26 @@ def main():
 
     # daemon = Pyro4.Daemon()
     # master_uri = daemon.register(master)
-    #ns = Pyro4.locateNS()
-    #ns.register("master", master_uri)
+    # ns = Pyro4.locateNS()
+    # ns.register("master", master_uri)
 
     def test():
         Pyro4.Daemon.serveSimple(
             {
-                master:"master"
-            }, host=worker.get_ip_address('em1'),
+                master: "master"
+            }, host=get_ip_address('eth0'),
             ns=True
         )
+
     testThread = threading.Thread(target=test)
     testThread.start()
+
+    tree.nodes_ns_register(host_ip)
 
     print("Master ready.")
     master.run_job_dispatcher()
     master.run_result_box()
-    #daemon.requestLoop()
+    # daemon.requestLoop()
     testThread.join()
 
 

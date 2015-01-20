@@ -13,6 +13,7 @@ class TargetNode(object):
         self.state = 0
         self.child_count = 0
         self.satisfied = False
+        self.exist = False
 
     def add_dependence(self, dependence):
         self.dependencies.append(dependence)

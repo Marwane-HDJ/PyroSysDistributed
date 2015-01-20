@@ -36,24 +36,25 @@ def get_ip_address(ifname):
 
 def main():
     print("1")
-    worker = Worker('worker' + ":worker1")
 
+    host_ip = get_ip_address("eth0")
+    worker = Worker('worker:' + host_ip)
 
 
     def test():
         Pyro4.Daemon.serveSimple(
             {
-                worker:worker.name,
-            }, host=get_ip_address("em1"),
+                worker: worker.name,
+            }, host=host_ip,
             ns=True
         )
+
     testThread = threading.Thread(target=test)
     testThread.start()
 
     print("Worker ready.")
 
-    master =Pyro4.Proxy("PYRONAME:master")
-    print(master.echo(" Hello"))
+    master = Pyro4.Proxy("PYRONAME:master")
     master.register(worker.name)
 
     print ("Done")
