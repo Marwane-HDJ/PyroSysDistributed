@@ -20,6 +20,7 @@ class Worker(object):
 
     def do_work(self, command_files):
         print(self.name + ":" + str(command_files))
+
         # return "I'm ready to work more, my master" + self.name
         return "result:" + self.name + ":" + command_files
 
@@ -35,7 +36,7 @@ def get_ip_address(ifname):
 
 def main():
     print("1")
-    worker = Worker('worker' + ":" + get_ip_address('eth0'))
+    worker = Worker('worker' + ":worker1")
 
     daemon = Pyro4.Daemon()
     worker_uri = daemon.register(worker)
@@ -44,7 +45,9 @@ def main():
     print("Worker ready.")
 
     # register itself at the master and it will send work automatically
-    master = Pyro4.Proxy("PYRONAME:master")
+    #master = Pyro4.Proxy("PYRONAME:master@129.88.241.52:9090")
+    uri_master = ns.lookup("master")
+    master = Pyro4.Proxy(uri_master)
     master.register(worker.name)
     daemon.requestLoop()
 

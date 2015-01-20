@@ -112,14 +112,24 @@ def main():
     else:
         master = Master()
 
-    daemon = Pyro4.Daemon()
-    master_uri = daemon.register(master)
-    ns = Pyro4.locateNS()
-    ns.register("master", master_uri)
+    # daemon = Pyro4.Daemon()
+    # master_uri = daemon.register(master)
+    #ns = Pyro4.locateNS()
+    #ns.register("master", master_uri)
+    def test():
+        Pyro4.Daemon.serveSimple(
+            {
+                master:"master"
+            }, host="129.88.57.105",
+            ns=True
+        )
+    testThread = threading.Thread(target=test)
+    testThread.start()
     print("Master ready.")
     master.run_job_dispatcher()
     master.run_result_box()
-    daemon.requestLoop()
+    #daemon.requestLoop()
+    testThread.join()
 
 
 if __name__ == "__main__":
