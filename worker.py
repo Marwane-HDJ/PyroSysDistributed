@@ -4,7 +4,7 @@ import fcntl
 import struct
 
 import Pyro4
-
+import threading
 
 __author__ = 'marouane'
 
@@ -38,20 +38,27 @@ def main():
     print("1")
     worker = Worker('worker' + ":worker1")
 
-    daemon = Pyro4.Daemon()
-    worker_uri = daemon.register(worker)
-    ns = Pyro4.locateNS()
-    ns.register(worker.name, worker_uri)
+
+
+    def test():
+        Pyro4.Daemon.serveSimple(
+            {
+                worker:worker.name,
+            }, host=get_ip_address("em1"),
+            ns=True
+        )
+    testThread = threading.Thread(target=test)
+    testThread.start()
+
     print("Worker ready.")
 
-    # register itself at the master and it will send work automatically
-    #master = Pyro4.Proxy("PYRONAME:master@129.88.241.52:9090")
-    uri_master = ns.lookup("master")
-    master = Pyro4.Proxy(uri_master)
+    master =Pyro4.Proxy("PYRONAME:master")
+    print(master.echo(" Hello"))
     master.register(worker.name)
-    daemon.requestLoop()
+
+    print ("Done")
+    testThread.join()
 
 
 if __name__ == "__main__":
     main()
-

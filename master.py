@@ -116,15 +116,17 @@ def main():
     # master_uri = daemon.register(master)
     #ns = Pyro4.locateNS()
     #ns.register("master", master_uri)
+
     def test():
         Pyro4.Daemon.serveSimple(
             {
                 master:"master"
-            }, host="129.88.57.105",
+            }, host=worker.get_ip_address('em1'),
             ns=True
         )
     testThread = threading.Thread(target=test)
     testThread.start()
+
     print("Master ready.")
     master.run_job_dispatcher()
     master.run_result_box()
@@ -134,4 +136,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
