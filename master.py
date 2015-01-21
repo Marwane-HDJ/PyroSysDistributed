@@ -5,22 +5,30 @@ import sys
 import Queue
 import threading
 import fcntl
+from time import sleep
 
 import Pyro4
 
 from DataStructure.targetTree import TargetTree
-from Utilities.parser import parse
+from Utilities.parser import parse, parse_v2
+from filesContainer import FilesContainer
 
 
 __author__ = 'marouane'
 
+Pyro4.config.REQUIRE_EXPOSE = True
 
+
+@Pyro4.expose
 class Master(object):
-    def __init__(self, tree=None):
+    def __init__(self, tree=None, target=""):
         self.workers = []
         self.free_workers = Queue.Queue()
         self.job_results = Queue.Queue()
         self.tree = tree
+        self.fc = None
+        if self.tree and len(target) > 0:
+            self.tree.change_tree_root(target)
         # queue of tasks to be done, the master should put the tasks here as they are available to run_job_dispatcher
         self.jobs_to_do = Queue.Queue()
         # for i in range(100):
@@ -34,7 +42,8 @@ class Master(object):
         self.free_workers.put(worker_name)
         print("worker " + worker_name + " registred.")
 
-    def echo(self, message):
+    @staticmethod
+    def echo(message):
         print(message)
         return "Hi slave"
 
@@ -42,30 +51,29 @@ class Master(object):
         job_list = list
         job_list = self.tree.no_child_nodes()
         for job in job_list:
-            self.jobs_to_do.put_nowait(job.value)
+            if job.exist:
+                for f in job.file_dependencies:
+                    try:
+                        self.fc.store(f.value)
+                    except:
+                        print("File not found " + f.value)
+                self.jobs_to_do.put(job.value)
 
-    def prepare_jobs_cut(self):
-        job_list = list
-        job_list = self.tree.no_child_nodes_cut()
-        for job in job_list:
-            self.jobs_to_do.put(job.value)
-
-    def send_work(self, worker_name, job):
+    @staticmethod
+    def send_work(worker_name, job):
         worker = Pyro4.Proxy("PYRONAME:" + worker_name)
-        # block until there is some work to do
-        return worker.do_work(job)
-        # print("The result is : " + result)
+        worker.do_work(job)
 
     def run_job_dispatcher(self):
         def dispatch_jobs():
             while True:
                 print("We want you !")
                 self.prepare_jobs()
-
+                sleep(3)
                 job = self.jobs_to_do.get(block=True)
                 worker = self.free_workers.get(block=True)
-                result = self.send_work(worker, job)
-                self.receive_result(result)
+                self.send_work(worker, job)
+                # self.receive_result(result)
                 # print("work sent")
                 # self.receive_result(result)
                 # self.free_workers.put(worker)
@@ -80,9 +88,9 @@ class Master(object):
             while True:
                 result = self.job_results.get(block=True)
                 var = result.split(":")
-                if len(var) == 4:
-                    worker = var[1] + ":" + var[2]
-                    command = var[3]
+                if len(var) == 5:
+                    worker = var[1] + ":" + var[2] + ":" + var[3]
+                    command = var[4]
                     print("received : " + command + " from " + worker)
                     self.tree.node_satisfied(command)
                     self.prepare_jobs()
@@ -109,40 +117,59 @@ def main():
     tree = None
     makefile = None
     master = None
-    host_ip = get_ip_address('eth0')
+    interface = "eth0"
 
     if 2 == len(sys.argv):
         # if the argument is the makefile name
         f_path = abspath(sys.argv[1])
-        makefile = parse(f_path)
+        makefile = parse_v2(f_path)
         tree = TargetTree(makefile)
-        master = Master(tree)
+        master = Master(tree=tree)
+    elif 3 == len(sys.argv):
+        f_path = abspath(sys.argv[1])
+        makefile = parse_v2(f_path)
+        tree = TargetTree(makefile)
+        target = sys.argv[2]
+        master = Master(tree=tree, target=target)
+    elif 4 == len(sys.argv):
+        f_path = abspath(sys.argv[1])
+        makefile = parse_v2(f_path)
+        tree = TargetTree(makefile)
+        target = sys.argv[2]
+        master = Master(tree=tree, target=target)
+        interface = sys.argv[3]
     else:
         master = Master()
 
-    # daemon = Pyro4.Daemon()
-    # master_uri = daemon.register(master)
-    # ns = Pyro4.locateNS()
-    # ns.register("master", master_uri)
+    host_ip = get_ip_address(interface)
+    daemon = Pyro4.Daemon(host=host_ip)
+    ns = Pyro4.locateNS(host=host_ip)
+    master_uri = daemon.register(master)
+    ns.register("master", master_uri)
+    print("Master register in naming server done")
+    tree.nodes_ns_register(daemon, ns)
+    print("Nodes register in naming server done")
+    master.fc = FilesContainer()
+    fc_uri = daemon.register(master.fc)
+    ns.register("FilesContainer", fc_uri)
 
-    def test():
-        Pyro4.Daemon.serveSimple(
-            {
-                master: "master"
-            }, host=get_ip_address('eth0'),
-            ns=True
-        )
+    # def test():
+    # Pyro4.Daemon.serveSimple(
+    # {
+    # master: "master"
+    # }, host=get_ip_address('eth0'),
+    # ns=True
+    # )
+    #
+    # testThread = threading.Thread(target=test)
+    # testThread.start()
 
-    testThread = threading.Thread(target=test)
-    testThread.start()
-
-    tree.nodes_ns_register(host_ip)
-
-    print("Master ready.")
     master.run_job_dispatcher()
     master.run_result_box()
-    # daemon.requestLoop()
-    testThread.join()
+    print("Master ready")
+    daemon.requestLoop()
+
+    # testThread.join()
 
 
 if __name__ == "__main__":

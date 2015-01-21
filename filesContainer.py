@@ -1,7 +1,14 @@
 # saved as filesContainer.py
+import Pyro4
+
 __author__ = 'monssef'
 
-#dictionnary which contains the current files
+# dictionnary which contains the current files
+
+Pyro4.config.REQUIRE_EXPOSE = True
+
+
+@Pyro4.expose
 class FilesContainer(object):
     def __init__(self):
         self.files = {}
@@ -13,6 +20,7 @@ class FilesContainer(object):
         fileContent = open(name, "r")
         self.files[name] = fileContent.read()
         fileContent.close()
+
 
     def take(self, name):
         return self.files.pop(name)

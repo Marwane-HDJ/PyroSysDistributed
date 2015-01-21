@@ -5,7 +5,10 @@ from DataStructure.targetNode import TargetNode
 
 __author__ = 'Marouane'
 
+Pyro4.config.REQUIRE_EXPOSE = True
 
+
+@Pyro4.expose
 class TargetTree(object):
     def __init__(self, makefile):
         self.tree_root = None
@@ -39,6 +42,8 @@ class TargetTree(object):
                     d = self.targets.get(dependence)
                     p.add_dependence(d)
 
+        self.update_file_dependencies(self.tree_root)
+
     def print_dico(self):
         for key in self.targets:
             print("Node : " + key + "\n")
@@ -51,6 +56,22 @@ class TargetTree(object):
                     print(val.value + " ")
                 print("\n")
 
+    def change_tree_root(self, target):
+        node = self.targets.get(target)
+        if node:
+            node.exist = True
+            self.tree_root = node
+
+    def update_file_dependencies(self, node):
+        if len(node.dependencies) == 0:
+            if not node.exist:
+                node.parent.add_file_dependence(node)
+        else:
+            for dep in node.dependencies:
+                self.update_file_dependencies(dep)
+                for fd in dep.file_dependencies:
+                    dep.remove_dependence(fd)
+
     def no_child_nodes(self):
         node_list = []
         self.recursive_no_child_nodes(self.tree_root, node_list)
@@ -59,7 +80,6 @@ class TargetTree(object):
     def recursive_no_child_nodes(self, node, node_list):
         if len(node.dependencies) == 0:
             if node.state == 0:
-                print("add =======" + node.value)
                 node_list.append(node)
                 node.state = 1
         else:
@@ -68,8 +88,11 @@ class TargetTree(object):
 
     def node_satisfied(self, node_name):
         node = self.targets.get(node_name)
-        if node != self.tree_root:
-            node.parent.dependencies.remove(node)
+        if node and node != self.tree_root:
+            try:
+                node.parent.dependencies.remove(node)
+            except:
+                pass
 
     def recursive_print(self, node):
         if len(node.dependencies) == 0:
@@ -80,15 +103,11 @@ class TargetTree(object):
                 self.recursive_print(dep)
             print(node.command)
 
-    def nodes_ns_register(self, host):
-        dm = Pyro4.Daemon(host=host)
-        ns = Pyro4.locateNS(host=host)
-
+    def nodes_ns_register(self, daemon, ns):
         for target in self.targets.keys():
             node = self.targets.get(target)
-            uri = dm.register(node)
+            uri = daemon.register(node)
             ns.register(node.value, uri)
-        #dm.requestLoop()
 
     def update_satisfaction(self, node):
         if len(node.dependencies) == 0:
@@ -98,29 +117,3 @@ class TargetTree(object):
                 self.update_satisfaction(dep)
             self.update_satisfaction(node)
 
-    def recursive_execute(self, node, queue):
-        if len(node.dependencies) == 0:
-            if len(node.command) != 0:
-                # TODO : Change from print to execute
-                # print(node.command)
-                # node.execute_command()
-                if node.state == 1:
-                    node.state = 2
-                    queue.put(node)
-        else:
-            ready = True
-            for dep in node.dependencies:
-                if dep.state != 3:
-                    ready = False
-                    self.recursive_execute(dep, queue)
-
-            if ready:
-                node.state = 2
-                queue.put(node)
-
-                # self.recursive_execute(dep)
-                # if len(dep.command) > 0:
-                # print(dep.command)
-                # TODO : Change from print to execute
-                # print(node.command)
-                # node.execute_command()
