@@ -27,6 +27,8 @@ class Master(object):
         self.job_results = Queue.Queue()
         self.tree = tree
         self.fc = None
+        self.daemon = None
+        self.working = True
         if self.tree and len(target) > 0:
             self.tree.change_tree_root(target)
         # queue of tasks to be done, the master should put the tasks here as they are available to run_job_dispatcher
@@ -93,6 +95,11 @@ class Master(object):
                     worker = var[1] + ":" + var[2] + ":" + var[3]
                     command = var[4]
                     print("received : " + command + " from " + worker)
+                    if (command == self.tree.tree_root.value):
+                        print("Make file finish !")
+                        self.daemon.shutdown()
+                        return
+
                     self.tree.node_satisfied(command)
                     self.prepare_jobs()
                     self.free_workers.put(worker, block=True)
@@ -131,7 +138,7 @@ def main():
         f_path = abspath(sys.argv[1])
         makefile = parse_v2(f_path)
         target = sys.argv[2]
-        tree = TargetTree(makefile=makefile,root_value=target)
+        tree = TargetTree(makefile=makefile, root_value=target)
 
         tree.recursive_print(tree.tree_root)
 
@@ -141,7 +148,7 @@ def main():
         f_path = abspath(sys.argv[1])
         makefile = parse_v2(f_path)
         target = sys.argv[2]
-        tree = TargetTree(makefile=makefile,root_value=target)
+        tree = TargetTree(makefile=makefile, root_value=target)
         master = Master(tree=tree, target=target)
         interface = sys.argv[3]
     else:
@@ -149,6 +156,7 @@ def main():
 
     host_ip = get_ip_address(interface)
     daemon = Pyro4.Daemon(host=host_ip)
+    master.daemon = daemon
     ns = Pyro4.locateNS(host=host_ip)
     master_uri = daemon.register(master)
     ns.register("master", master_uri)
@@ -159,24 +167,10 @@ def main():
     fc_uri = daemon.register(master.fc)
     ns.register("FilesContainer", fc_uri)
 
-    # def test():
-    # Pyro4.Daemon.serveSimple(
-    # {
-    # master: "master"
-    # }, host=get_ip_address('eth0'),
-    # ns=True
-    # )
-    #
-    # testThread = threading.Thread(target=test)
-    # testThread.start()
-
     master.run_job_dispatcher()
     master.run_result_box()
     print("Master ready")
     daemon.requestLoop()
-
-    # testThread.join()
-
 
 if __name__ == "__main__":
     main()
