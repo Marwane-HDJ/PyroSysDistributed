@@ -10,7 +10,7 @@ from time import sleep
 import Pyro4
 
 from DataStructure.targetTree import TargetTree
-from Utilities.parser import parse, parse_v2
+from Utilities.parser import parse, parse_v2, print_make_file
 from filesContainer import FilesContainer
 
 
@@ -48,9 +48,10 @@ class Master(object):
         return "Hi slave"
 
     def prepare_jobs(self):
-        job_list = list
+        job_list = list()
         job_list = self.tree.no_child_nodes()
         for job in job_list:
+            print(job.value)
             if job.exist:
                 for f in job.file_dependencies:
                     try:
@@ -69,7 +70,7 @@ class Master(object):
             while True:
                 print("We want you !")
                 self.prepare_jobs()
-                sleep(3)
+                # sleep(3)
                 job = self.jobs_to_do.get(block=True)
                 worker = self.free_workers.get(block=True)
                 self.send_work(worker, job)
@@ -120,22 +121,27 @@ def main():
     interface = "eth0"
 
     if 2 == len(sys.argv):
-        # if the argument is the makefile name
+        # 1 parametere - 1: makefile
         f_path = abspath(sys.argv[1])
         makefile = parse_v2(f_path)
-        tree = TargetTree(makefile)
+        tree = TargetTree(makefile=makefile)
         master = Master(tree=tree)
     elif 3 == len(sys.argv):
+        # 2 parameteres - 1: makefile, 2: target
         f_path = abspath(sys.argv[1])
         makefile = parse_v2(f_path)
-        tree = TargetTree(makefile)
         target = sys.argv[2]
+        tree = TargetTree(makefile=makefile,root_value=target)
+
+        tree.recursive_print(tree.tree_root)
+
         master = Master(tree=tree, target=target)
     elif 4 == len(sys.argv):
+        # 3 parameteres - 1: makefile, 2: target, 3: interface reseau
         f_path = abspath(sys.argv[1])
         makefile = parse_v2(f_path)
-        tree = TargetTree(makefile)
         target = sys.argv[2]
+        tree = TargetTree(makefile=makefile,root_value=target)
         master = Master(tree=tree, target=target)
         interface = sys.argv[3]
     else:
