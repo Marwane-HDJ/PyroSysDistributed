@@ -32,7 +32,7 @@ def parse(f_path):
                                 lastincommand = False
                             lastintargetdep = True
                             x = line.split(":", 1)
-                            target = Target(x[0], x[1].strip().split(), None)
+                            target = Target(x[0].strip(), x[1].strip().split(), None)
                         elif regexpcommand.match(line):
                             if lastintargetdep or lastincommand:
                                 lastintargetdep = False

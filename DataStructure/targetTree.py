@@ -15,12 +15,13 @@ class TargetTree(object):
         self.targets = {}
         self.first = True
         self.root = None
+        self.files = {}
 
         for target in makefile:
             p = None
 
             if not self.targets.has_key(target.value):
-                p = TargetNode(target.value, target.commands, None, [])
+                p = TargetNode(value=target.value, command=target.commands, parent=None, dependencies=[])
                 self.targets.update({target.value: p})
             else:
                 p = self.targets.get(target.value)
@@ -39,8 +40,7 @@ class TargetTree(object):
             for dependence in target.dependencies:
                 d = None
                 if not self.targets.has_key(dependence):
-                    d = TargetNode(dependence, '', p, [])
-                    print(d.value)
+                    d = TargetNode(value=dependence, command='', parent=p, dependencies=[])
                     p.add_dependence(d)
                     self.targets.update({dependence: d})
                 else:
@@ -53,6 +53,8 @@ class TargetTree(object):
             self.first = False
 
         self.update_file_dependencies(self.tree_root)
+
+        self.change_to_file_list()
 
 
     def print_dico(self):
@@ -84,7 +86,22 @@ class TargetTree(object):
             for dep in node.dependencies:
                 v = self.update_file_dependencies(dep)
                 if v:
-                    node.remove_dependence(dep)
+                    var = self.files.get(node.value)
+                    if not var:
+                        li = set()
+                        li.add(v)
+                        self.files.update({node.value: li})
+                    else:
+                        var.add(v)
+
+    def change_to_file_list(self):
+        for val in self.files.keys():
+            li = self.files.get(val)
+            node = self.targets.get(val)
+            for elm in li:
+                node.add_file_dependence(elm)
+                node.remove_dependence(elm)
+
 
     def no_child_nodes(self):
         node_list = []
@@ -116,6 +133,16 @@ class TargetTree(object):
             for dep in node.dependencies:
                 self.recursive_print(dep)
             print(node.value)
+
+    def recursive_print_v2(self, node):
+        if len(node.dependencies) == 0:
+            pass
+        else:
+            for dep in node.dependencies:
+                self.recursive_print(dep)
+            print(node.value)
+            # print(node.dependencies)
+            print(node.file_dependencies)
 
     def nodes_ns_register(self, daemon, ns):
         for target in self.targets.keys():

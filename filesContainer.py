@@ -23,4 +23,4 @@ class FilesContainer(object):
 
 
     def take(self, name):
-        return self.files.pop(name)
+        return self.files[name]
