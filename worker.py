@@ -38,7 +38,7 @@ class Worker(object):
         self.fc.store(file)
 
     def execute_command(self, command):
-        if len(self.command) != 0:
+        if len(command) != 0:
             os.system(command)
 
     def do_work(self, job):
@@ -50,7 +50,7 @@ class Worker(object):
             print("need : " + dep.get_value())
             self.look_for_file(dep.get_value())
 
-        self.execute_command()
+        self.execute_command(node.get_command()[0])
 
         self.post_file(v)
 
