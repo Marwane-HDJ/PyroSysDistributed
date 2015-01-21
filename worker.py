@@ -8,6 +8,8 @@ import struct
 import Pyro4
 import threading
 import sys
+from subprocess import call
+import subprocess
 
 __author__ = 'marouane'
 
@@ -39,7 +41,9 @@ class Worker(object):
 
     def execute_command(self, command):
         if len(command) != 0:
-            os.system(command)
+            #os.system(command)
+            p = subprocess.Popen(command, shell=True)
+            p.communicate()
 
     def do_work(self, job):
         print(self.name + ":" + str(job))
@@ -69,7 +73,7 @@ def get_ip_address(ifname):
 def main():
     print("Work begin")
 
-    interface = "eth0"
+    interface = "wlan0"
 
     if 2 == len(sys.argv):
         interface = sys.argv[1]
@@ -77,8 +81,8 @@ def main():
     host_ip = get_ip_address(interface)
     worker = Worker('worker:' + host_ip + ":" + str(random.random()))
 
-    daemon = Pyro4.Daemon(host=host_ip)
-    ns = Pyro4.locateNS(host=host_ip)
+    daemon = Pyro4.Daemon(host="localhost")
+    ns = Pyro4.locateNS(host="localhost")
     worker.daemon = daemon
     worker.ns = ns
     worker_uri = daemon.register(worker)

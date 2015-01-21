@@ -125,7 +125,7 @@ def main():
     tree = None
     makefile = None
     master = None
-    interface = "eth0"
+    interface = "wlan0"
 
     if 2 == len(sys.argv):
         # 1 parametere - 1: makefile
@@ -155,9 +155,9 @@ def main():
         master = Master()
 
     host_ip = get_ip_address(interface)
-    daemon = Pyro4.Daemon(host=host_ip)
+    daemon = Pyro4.Daemon(host="localhost")
     master.daemon = daemon
-    ns = Pyro4.locateNS(host=host_ip)
+    ns = Pyro4.locateNS(host="localhost")
     master_uri = daemon.register(master)
     ns.register("master", master_uri)
     print("Master register in naming server done")

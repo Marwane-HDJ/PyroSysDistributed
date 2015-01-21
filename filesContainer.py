@@ -17,7 +17,7 @@ class FilesContainer(object):
         return self.files
 
     def store(self, name):
-        fileContent = open(name, "r")
+        fileContent = open(name, "rb")
         self.files[name] = fileContent.read()
         fileContent.close()
 

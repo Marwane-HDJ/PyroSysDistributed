@@ -27,6 +27,7 @@ class TargetTree(object):
                 p = self.targets.get(target.value)
                 p.exist = True
                 p.set_command(target.commands)
+                #p.dependencies = target.dependencies
                 self.targets.update({target.value: p})
 
             if self.first:
