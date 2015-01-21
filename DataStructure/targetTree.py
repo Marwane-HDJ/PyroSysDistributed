@@ -121,10 +121,11 @@ class TargetTree(object):
     def node_satisfied(self, node_name):
         node = self.targets.get(node_name)
         if node and node != self.tree_root:
-            try:
-                node.parent.dependencies.remove(node)
-            except:
-                pass
+            for dep in self.targets.values():
+                try:
+                    dep.dependencies.remove(node)
+                except:
+                    pass
 
     def recursive_print(self, node):
         if len(node.dependencies) == 0:
@@ -158,4 +159,3 @@ class TargetTree(object):
             for dep in node.dependencies:
                 self.update_satisfaction(dep)
             self.update_satisfaction(node)
-
