@@ -7,13 +7,14 @@ exportTaktuk = "export PATH=$PATH:/user/9/senazuzg/taktuk-3.7.5/Taktuk/bin/"
 exportPremier = "export PATH=$PATH:/user/9/senazuzg/taktuk-3.7.5/Taktuk/bin/"
 
 listHosts = str(sys.argv[1])
-f2 = open(listHosts, 'r')
+#with open(listHosts) as f2:
+    #hostList = f2.readlines()
+hostList = (hostList.rstrip('\n') for hostList in open(listHosts))
 
-hostList = []
-for line in f2.next():
-    hostList.append(line)
+#for line in f2.readline():
+    #hostList.append(line)
 
-f2.close()
+#f2.close()
 
 pClear = subprocess.Popen("rm frame_*.png; rm cube.mpg", shell=True)
 pClear.wait()
@@ -25,8 +26,8 @@ listTimeResults = []
 
 # Execution de reference
 startTime = time.time()
-pRef = subprocess.Popen("make", shell=True)
-pRef.wait()
+#pRef = subprocess.Popen("make", shell=True)
+#pRef.wait()
 
 tempsSeq = time.time() - startTime
 
@@ -37,8 +38,8 @@ while i < 5:
     j = 0
     commandTaktukWorkers = "taktuk -s "
     for host in hostList:
-        if j < 3 * i:
-            commandTaktukWorkers += " -m " + host
+        if j < 3 * (i+1):
+            commandTaktukWorkers += " -m " + str(host)
             j += 1
         else:
             break
