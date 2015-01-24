@@ -1,0 +1,88 @@
+import subprocess
+import sys
+import time
+import matplotlib.pyplot as plt
+
+exportTaktuk = "export PATH=$PATH:/user/9/senazuzg/taktuk-3.7.5/Taktuk/bin/"
+exportPremier = "export PATH=$PATH:/user/9/senazuzg/taktuk-3.7.5/Taktuk/bin/"
+
+listHosts = str(sys.argv[1])
+f2 = open(listHosts, 'r')
+
+hostList = []
+for line in f2.next():
+    hostList.append(line)
+
+f2.close()
+
+pClear = subprocess.Popen("rm frame_*.png; rm cube.mpg", shell=True)
+pClear.wait()
+
+subprocess.Popen(exportTaktuk, shell=True)
+subprocess.Popen(exportPremier, shell=True)
+
+listTimeResults = []
+
+# Execution de reference
+startTime = time.time()
+pRef = subprocess.Popen("make", shell=True)
+pRef.wait()
+
+tempsSeq = time.time() - startTime
+
+i = 0
+#Execution de 3, 6, 9, 12 et 15 workers
+while i < 5:
+
+    j = 0
+    commandTaktukWorkers = "taktuk -s "
+    for host in hostList:
+        if j < 3 * i:
+            commandTaktukWorkers += " -m " + host
+            j += 1
+        else:
+            break
+
+    commandTaktukWorkers += " exec { python worker.py }"
+
+    startTime = time.time()
+    commandMaster = "python master.py Makefile"
+    processMaster = subprocess.Popen(commandMaster, shell=True)
+    processWorker = subprocess.Popen(commandTaktukWorkers, shell=True)
+    processMaster.wait()
+
+    totalTime = time.time() - startTime
+    listTimeResults.append(totalTime)
+
+    f1 = open('./testPerfResult' + str(i) + '.txt', 'w+')
+    f1.write(str(totalTime))
+    f1.close()
+    i += 1
+
+#Nombre de workers pour temps d'execution
+plt.plot([3, 6, 9, 12, 15], listTimeResults, 'ro')
+plt.show()
+
+#Acceleration (Speedup)
+#C'est le temps du meilleur calcul sequentiel divise par le temps de calcul
+#parallele sur m processeurs ( T 1 /T m )
+
+listTimeResults2 = []
+for u in listTimeResults:
+    listTimeResults2.append(u / tempsSeq)
+plt.plot([3, 6, 9, 12, 15], listTimeResults2, 'ro')
+plt.show()
+
+
+#L'efficacite (Efficiency)
+#C'est l'acceleration multiplie par l'inverse du nombre m de ressources de
+#calculs ( T 1 /(m x T m ) )
+
+listTimeResults2 = []
+mList = [3, 6, 9, 12, 15]
+i = 0
+for u in listTimeResults:
+    listTimeResults2.append(u / (mList.pop() * tempsSeq))
+    i += 1
+plt.plot([3, 6, 9, 12, 15], listTimeResults2, 'ro')
+plt.show()
